@@ -19,11 +19,12 @@ def generate_test_image(file_name):
 
     split_name = file_name.split('.')
     split_name[0] = split_name[0] + '_testing'
-    test_image_name = split_name[0] + '.' + split_name[1]
+    ext = split_name[1]
+    test_image_name = split_name[0] + '.' + ext
 
     image.save(test_image_name)
 
-    return test_image_name
+    return test_image_name, ext
 
 
 def add_bit_least_significant(pixel_part, bit):
@@ -43,6 +44,7 @@ def calculate_new_pixels(pixels, width, height, bit_list):
             
         for j in range(width):
             r, g, b = pixels[j, i]
+    
             generated_red = 255
             generated_green = 255
             generated_blue = 255
@@ -64,13 +66,18 @@ def calculate_new_pixels(pixels, width, height, bit_list):
 
 def hide_bits_image(bit_array, image_file):
     """Hide all bits of message in the bytes of image"""
-    test_image_name = generate_test_image(image_file)
-    image_test = Image.open(test_image_name)
+    test_image_name, ext = generate_test_image(image_file)
+
+    image_test = Image.open(test_image_name).convert('RGB')
     width, height = image_test.size
+    
     print("Image created for test size: Width = {}, Height = {}".format(width, height))
     image_pixels = image_test.load()
+
     calculate_new_pixels(image_pixels, width,height, bit_array)
-    image_test.save("output.png")
+
+    image_test.save("output."+str(ext))
+    compare_file_size(image_file, "output."+str(ext))
 
 
 def compare_file_size(file1, file2):
@@ -141,7 +148,7 @@ def parser():
     ap = argparse.ArgumentParser()
     ap.add_argument("-m", "--Message", required=False,
                     help="Message to put in a image")
-    ap.add_argument("-f", "--OriginalImage", required=True,
+    ap.add_argument("-f", "--OriginalImage", required=False,
                     help="Original image to put a message or compare with result of steganography image")
     ap.add_argument("-o", "--ResultImage", required=False,
                     help="Image used to compare and extract the message hidden")
@@ -173,10 +180,8 @@ def main():
             print("Insert the resulted image of steganography process to extract the message")
             return
         else:
-            original_image = args.get('OriginalImage')
-            compare_file_size(original_image, result_image)
             message_bit_string = extract_message_lsb(result_image)
-            print(to_str(message_bit_string))
+            print("\nMessage hidden: " + to_str(message_bit_string))
 
 
 if __name__ == '__main__':
